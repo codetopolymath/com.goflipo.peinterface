@@ -6,7 +6,14 @@ const app = express();
 const PORT = process.env.PORT || 5002;
 
 // Enable CORS for all requests
-app.use(cors());
+var corsOptions = {
+  "origin": "http://localhost:3000",
+  "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+  "preflightContinue": false,
+  "optionsSuccessStatus": 204
+}
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Proxy endpoint for scrubbing logs API
