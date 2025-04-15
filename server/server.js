@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 5002;
 
 // Enable CORS for all requests
 var corsOptions = {
-  "origin": "http://peinterface.duckdns.org",
+  "origin": ["http://peinterface.duckdns.org", "http://localhost:3000"],
   "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
   "preflightContinue": false,
   "optionsSuccessStatus": 204
