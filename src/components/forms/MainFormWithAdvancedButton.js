@@ -1,63 +1,18 @@
-import React, { memo } from 'react';
+import React from 'react';
 import { 
-  Paper, Typography, Box, Button, 
-  Card, CardContent, alpha, useTheme, Fade, Zoom
+  Paper, Typography, Box, Button, alpha, useTheme, Fade, Zoom,
+  Card, CardContent
 } from '@mui/material';
 import { 
-  RestartAlt as ResetIcon,
-  Send as SendIcon
+  Send as SendIcon,
+  RestartAlt as ResetIcon
 } from '@mui/icons-material';
 import { useSMS } from '../../contexts/SMSContext';
 import SMSForm from './SMSForm';
 import ContactsInput from './ContactsInput';
-import CompactSendWithTemplate from '../ui/CompactSendWithTemplate';
+import AdvancedSendButton from '../ui/AdvancedSendButton';
 
-// Memoized Card component to prevent unnecessary re-renders
-const FormCard = memo(({ title, children }) => {
-  const theme = useTheme();
-  
-  return (
-    <Card
-      variant="outlined"
-      sx={{ 
-        mb: 4,
-        background: theme.palette.background.default,
-        borderColor: alpha(theme.palette.primary.main, 0.1)
-      }}
-    >
-      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-        <Typography 
-          variant="subtitle1" 
-          component="h3"
-          sx={{ 
-            mb: 2, 
-            fontWeight: 500,
-            color: 'text.primary'
-          }}
-        >
-          {title}
-        </Typography>
-        {children}
-      </CardContent>
-    </Card>
-  );
-});
-
-// Memoized Reset Button to prevent unnecessary re-renders
-const ResetButton = memo(({ onClick, disabled }) => (
-  <Button
-    variant="outlined" 
-    onClick={onClick} 
-    disabled={disabled}
-    startIcon={<ResetIcon />}
-    sx={{ px: 3 }}
-  >
-    Reset
-  </Button>
-));
-
-// Main Form Component optimized for performance
-const MainForm = () => {
+const MainFormWithAdvancedButton = () => {
   const { resetForm, handleSubmit, response } = useSMS();
   const theme = useTheme();
   
@@ -115,36 +70,74 @@ const MainForm = () => {
             pt: { xs: 2, md: 3 }
           }}
         >
-          {/* Message Details Card */}
-          <FormCard title="Message Details">
-            <SMSForm />
-          </FormCard>
+          <Card
+            variant="outlined"
+            sx={{ 
+              mb: 4,
+              background: theme.palette.background.default,
+              borderColor: alpha(theme.palette.primary.main, 0.1)
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography 
+                variant="subtitle1" 
+                component="h3"
+                sx={{ 
+                  mb: 2, 
+                  fontWeight: 500,
+                  color: 'text.primary'
+                }}
+              >
+                Message Details
+              </Typography>
+              <SMSForm />
+            </CardContent>
+          </Card>
           
-          {/* Recipients Card */}
-          <FormCard title="Recipients">
-            <ContactsInput />
-          </FormCard>
+          <Card
+            variant="outlined"
+            sx={{ 
+              mb: 4,
+              background: theme.palette.background.default,
+              borderColor: alpha(theme.palette.primary.main, 0.1)
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography 
+                variant="subtitle1" 
+                component="h3"
+                sx={{ 
+                  mb: 2, 
+                  fontWeight: 500,
+                  color: 'text.primary'
+                }}
+              >
+                Recipients
+              </Typography>
+              <ContactsInput />
+            </CardContent>
+          </Card>
           
-          {/* Action buttons with enhanced send functionality */}
+          {/* Action buttons with Advanced Send Button */}
           <Fade in={true} style={{ transitionDelay: '200ms' }}>
             <Box 
               sx={{ 
                 display: 'flex', 
-                flexDirection: 'column',
+                justifyContent: 'flex-end', 
                 gap: 2,
                 mt: 3 
               }}
             >
-              {/* Compact Send with Template for backup mode, or regular buttons for primary */}
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-end', 
-                gap: 2,
-                alignItems: 'center'
-              }}>
-                <ResetButton onClick={resetForm} disabled={response.loading} />
-                <CompactSendWithTemplate />
-              </Box>
+              <Button
+                variant="outlined" 
+                onClick={resetForm} 
+                disabled={response.loading}
+                startIcon={<ResetIcon />}
+                sx={{ px: 3 }}
+              >
+                Reset
+              </Button>
+              <AdvancedSendButton />
             </Box>
           </Fade>
         </Box>
@@ -153,4 +146,4 @@ const MainForm = () => {
   );
 };
 
-export default memo(MainForm);
+export default MainFormWithAdvancedButton;

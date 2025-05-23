@@ -1,0 +1,297 @@
+import React from 'react';
+import { 
+  Paper, Typography, Box, Button, 
+  Card, CardContent, alpha, useTheme, Fade, Zoom
+} from '@mui/material';
+import { 
+  Send as SendIcon,
+  RestartAlt as ResetIcon
+} from '@mui/icons-material';
+import { useSMS } from '../../contexts/SMSContext';
+import SMSForm from './SMSForm';
+import ContactsInput from './ContactsInput';
+import CompactSendWithTemplate from '../ui/CompactSendWithTemplate';
+
+const MainForm = () => {
+  const { resetForm, handleSubmit, response } = useSMS();
+  const theme = useTheme();
+  
+  return (
+    <Zoom in={true} style={{ transitionDelay: '100ms' }}>
+      <Paper 
+        elevation={0}
+        sx={{ 
+          p: 0, 
+          mb: 4,
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        {/* Header Section */}
+        <Box 
+          sx={{ 
+            p: { xs: 2, md: 3 }, 
+            pb: { xs: 2, md: 2 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            background: `linear-gradient(to right, ${alpha(theme.palette.primary.main, 0.05)}, ${alpha(theme.palette.primary.main, 0.01)})`,
+          }}
+        >
+          <Typography 
+            variant="h5" 
+            component="h2" 
+            sx={{ 
+              fontWeight: 600,
+              color: 'primary.main',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <SendIcon sx={{ mr: 1.5, opacity: 0.7 }} fontSize="medium" />
+            Send SMS Message
+          </Typography>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ mt: 0.5, maxWidth: '600px' }}
+          >
+            Complete the form below to send SMS messages to your contacts. You can send to individual numbers or upload a list of recipients.
+          </Typography>
+        </Box>
+        
+        {/* Form Content */}
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit} 
+          noValidate
+          sx={{ 
+            p: { xs: 2, sm: 3 },
+            pt: { xs: 2, md: 3 }
+          }}
+        >
+          <Card
+            variant="outlined"
+            sx={{ 
+              mb: 4,
+              background: theme.palette.background.default,
+              borderColor: alpha(theme.palette.primary.main, 0.1)
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography 
+                variant="subtitle1" 
+                component="h3"
+                sx={{ 
+                  mb: 2, 
+                  fontWeight: 500,
+                  color: 'text.primary'
+                }}
+              >
+                Message Details
+              </Typography>
+              <SMSForm />
+            </CardContent>
+          </Card>
+          
+          <Card
+            variant="outlined"
+            sx={{ 
+              mb: 4,
+              background: theme.palette.background.default,
+              borderColor: alpha(theme.palette.primary.main, 0.1)
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography 
+                variant="subtitle1" 
+                component="h3"
+                sx={{ 
+                  mb: 2, 
+                  fontWeight: 500,
+                  color: 'text.primary'
+                }}
+              >
+                Recipients
+              </Typography>
+              <ContactsInput />
+            </CardContent>
+          </Card>
+          
+          {/* Action buttons with enhanced send functionality */}
+          <Fade in={true} style={{ transitionDelay: '200ms' }}>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                gap: 2,
+                mt: 3 
+              }}
+            >
+              {/* Compact Send with Template for backup mode, or regular buttons for primary */}
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                gap: 2,
+                alignItems: 'center'
+              }}>
+                <Button
+                  variant="outlined" 
+                  onClick={resetForm} 
+                  disabled={response.loading}
+                  startIcon={<ResetIcon />}
+                  sx={{ px: 3 }}
+                >
+                  Reset
+                </Button>
+                <CompactSendWithTemplate />
+              </Box>
+            </Box>
+          </Fade>
+        </Box>
+      </Paper>
+    </Zoom>
+  );
+};
+
+export default MainForm;
+  
+  return (
+    <Zoom in={true} style={{ transitionDelay: '100ms' }}>
+      <Paper 
+        elevation={0}
+        sx={{ 
+          p: 0, 
+          mb: 4,
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        {/* Header Section */}
+        <Box 
+          sx={{ 
+            p: { xs: 2, md: 3 }, 
+            pb: { xs: 2, md: 2 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            background: `linear-gradient(to right, ${alpha(theme.palette.primary.main, 0.05)}, ${alpha(theme.palette.primary.main, 0.01)})`,
+          }}
+        >
+          <Typography 
+            variant="h5" 
+            component="h2" 
+            sx={{ 
+              fontWeight: 600,
+              color: 'primary.main',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <SendIcon sx={{ mr: 1.5, opacity: 0.7 }} fontSize="medium" />
+            Send SMS Message
+          </Typography>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ mt: 0.5, maxWidth: '600px' }}
+          >
+            Complete the form below to send SMS messages to your contacts. You can send to individual numbers or upload a list of recipients.
+          </Typography>
+        </Box>
+        
+        {/* Form Content */}
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit} 
+          noValidate
+          sx={{ 
+            p: { xs: 2, sm: 3 },
+            pt: { xs: 2, md: 3 }
+          }}
+        >
+          <Card
+            variant="outlined"
+            sx={{ 
+              mb: 4,
+              background: theme.palette.background.default,
+              borderColor: alpha(theme.palette.primary.main, 0.1)
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography 
+                variant="subtitle1" 
+                component="h3"
+                sx={{ 
+                  mb: 2, 
+                  fontWeight: 500,
+                  color: 'text.primary'
+                }}
+              >
+                Message Details
+              </Typography>
+              <SMSForm />
+            </CardContent>
+          </Card>
+          
+          <Card
+            variant="outlined"
+            sx={{ 
+              mb: 4,
+              background: theme.palette.background.default,
+              borderColor: alpha(theme.palette.primary.main, 0.1)
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography 
+                variant="subtitle1" 
+                component="h3"
+                sx={{ 
+                  mb: 2, 
+                  fontWeight: 500,
+                  color: 'text.primary'
+                }}
+              >
+                Recipients
+              </Typography>
+              <ContactsInput />
+            </CardContent>
+          </Card>
+          
+          {/* Action buttons with enhanced send functionality */}
+          <Fade in={true} style={{ transitionDelay: '200ms' }}>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                gap: 2,
+                mt: 3 
+              }}
+            >
+              {/* Compact Send with Template for backup mode, or regular buttons for primary */}
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                gap: 2,
+                alignItems: 'center'
+              }}>
+                <Button
+                  variant="outlined" 
+                  onClick={resetForm} 
+                  disabled={response.loading}
+                  startIcon={<ResetIcon />}
+                  sx={{ px: 3 }}
+                >
+                  Reset
+                </Button>
+                <CompactSendWithTemplate />
+              </Box>
+            </Box>
+          </Fade>
+        </Box>
+      </Paper>
+    </Zoom>
+  );
+};
+
+export default MainForm;

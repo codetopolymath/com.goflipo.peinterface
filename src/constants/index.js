@@ -10,7 +10,7 @@ export const DEFAULT_FORM_DATA = {
   senderid: 'SANJUP',
   pe_id: '1501550540000010698',
   content_id: '1507167577648640421',
-  message: 'Thank you for showing interest, for more information please click on below link {#var#} Sanjay'
+  message: 'Thank you for showing interest, for more information please click on below link hello Sanjay'
 };
 
 // Message templates for backup mode

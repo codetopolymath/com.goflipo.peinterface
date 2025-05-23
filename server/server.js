@@ -119,7 +119,8 @@ app.post('/process-message', async (req, res) => {
       serverUrl,
       serverPayload,
       {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 5000
       }
     );
 

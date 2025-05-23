@@ -16,7 +16,7 @@ export const SMSProvider = ({ children }) => {
   const [inputMode, setInputMode] = useState(0);
   const [bulkNumbers, setBulkNumbers] = useState('');
   const [corsError, setCorsError] = useState(false);
-  const [apiMode, setApiMode] = useState('primary');
+  const [apiMode, setApiMode] = useState('backup'); // Changed to backup as default since it's used 95% of the time
   const [messageType, setMessageType] = useState('SIMPLE MESSAGE');
 
   // Form handlers
