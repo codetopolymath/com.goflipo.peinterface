@@ -22,7 +22,7 @@ app.get('/api/scrubbing-logs', async (req, res) => {
   try {
     const params = new URLSearchParams(req.query);
     const response = await axios.get(
-      `https://smartping-backend.goflipo.com/api/main/scrubbing-logs?${params.toString()}`
+      `https://stage-smartping-backend.goflipo.com/api/main/scrubbing-logs?${params.toString()}`
     );
     res.json(response.data);
   } catch (error) {
@@ -81,7 +81,7 @@ app.post('/process-message', async (req, res) => {
   try {
     // Step 1: Call INIT-API (Scrubbing Logs)
     const initResponse = await axios.post(
-      'https://smartping-backend.goflipo.com/api/main/scrubbing-logs',
+      'https://stage-smartping-backend.goflipo.com/api/main/scrubbing-logs',
       payload,
       {
         headers: { 'Content-Type': 'application/json' }
@@ -114,7 +114,7 @@ app.post('/process-message', async (req, res) => {
       message_hex: messageHex
     };
 
-    const serverUrl = 'http://gobackup.duckdns.org/process-verify';
+    const serverUrl = 'http://143.110.242.221:8080/process-verify';
     const serverResponse = await axios.post(
       serverUrl,
       serverPayload,
