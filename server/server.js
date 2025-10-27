@@ -8,7 +8,7 @@ const BACKUP_PORT = process.env.BACKUP_PORT || 5001;
 
 // Enable CORS for all requests
 var corsOptions = {
-  "origin": ["http://peinterface.duckdns.org", "http://localhost:3000"],
+  "origin": ["http://peinterface.goflipo.in/", "http://localhost:3000"],
   "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
   "preflightContinue": false,
   "optionsSuccessStatus": 204
