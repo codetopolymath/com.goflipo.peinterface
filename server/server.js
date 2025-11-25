@@ -7,12 +7,31 @@ const PORT = process.env.PORT || 5002;
 const BACKUP_PORT = process.env.BACKUP_PORT || 5001;
 
 // Enable CORS for all requests
-var corsOptions = {
-  "origin": ["http://peinterface.goflipo.in/", "http://localhost:3000"],
-  "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-  "preflightContinue": false,
-  "optionsSuccessStatus": 204
-}
+// In development, allow all origins. In production, use whitelist.
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+var corsOptions = isDevelopment
+  ? {
+      origin: true, // Allow all origins in development
+      credentials: true,
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      optionsSuccessStatus: 204
+    }
+  : {
+      origin: [
+        "http://peinterface.goflipo.in",
+        "https://peinterface.goflipo.in",
+        "http://localhost:3000",
+        "http://64.227.156.167",
+        "http://64.227.156.167:3000",
+        "http://64.227.156.167:5001",
+        "http://64.227.156.167:5002"
+      ],
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+      credentials: true
+    }
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -143,9 +162,10 @@ app.post('/process-message', async (req, res) => {
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
-  app.use(express.static('client/build'));
+  // Build folder is at the root level, not in client folder
+  app.use(express.static(path.join(__dirname, '..', 'build')));
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
+    res.sendFile(path.resolve(__dirname, '..', 'build', 'index.html'));
   });
 }
 

@@ -1,7 +1,24 @@
 // API URLs
 export const PRIMARY_SCRUBBING_API = 'https://smartping-backend.goflipo.com/api/main/scrubbing-logs';
 export const PRIMARY_SMS_API = 'https://relit.in/app/smsapisr/index.php';
-export const BACKUP_API = 'http://localhost:5001/process-message';
+
+// Use environment variable or fallback to current host for BACKUP_API
+const getBackupApiUrl = () => {
+  // If running in browser, use current origin + port 5001
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    // If localhost, use localhost:5001, otherwise use hostname:5001
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${protocol}//localhost:5001/process-message`;
+    }
+    return `${protocol}//${hostname}:5001/process-message`;
+  }
+  // Fallback for server-side rendering
+  return 'http://localhost:5001/process-message';
+};
+
+export const BACKUP_API = getBackupApiUrl();
 
 // Default form values
 export const DEFAULT_FORM_DATA = {
