@@ -8,11 +8,12 @@ const getBackupApiUrl = () => {
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    // If localhost, use localhost:5001, otherwise use hostname:5001
+    // If localhost, use localhost:5001, otherwise use hostname without port (Nginx proxy)
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return `${protocol}//localhost:5001/process-message`;
     }
-    return `${protocol}//${hostname}:5001/process-message`;
+    // For production, use the same origin (Nginx will proxy to port 5001)
+    return `${protocol}//${hostname}/process-message`;
   }
   // Fallback for server-side rendering
   return 'http://localhost:5001/process-message';
