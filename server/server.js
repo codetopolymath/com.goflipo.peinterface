@@ -98,27 +98,34 @@ app.post('/process-message', async (req, res) => {
   }
 
   try {
+    console.log('[BACKUP MODE] Starting process-message for number:', payload.number);
+
     // Step 1: Call INIT-API (Scrubbing Logs)
+    console.log('[BACKUP MODE] Step 1: Calling INIT-API (scrubbing-logs)...');
     const initResponse = await axios.post(
       'https://stage-smartping-backend.goflipo.com/api/main/scrubbing-logs',
       payload,
       {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 30000 // 30 second timeout
       }
     );
 
     const initData = initResponse.data;
+    console.log('[BACKUP MODE] Step 1: INIT-API response received, status:', initData.status);
 
     // Check if the call was successful
     if (!initData.status) {
+      console.error('[BACKUP MODE] Step 1: INIT-API call failed:', initData);
       return res.status(500).json({
-        error: 'INIT-API call failed', 
+        error: 'INIT-API call failed',
         details: initData
       });
     }
 
     // Step 2: Get authcode and prepare for server call
     const authcode = initData.data.authcode;
+    console.log('[BACKUP MODE] Step 2: Authcode received:', authcode);
 
     // Convert message to hex for VERIFY-API
     const messageHex = textToHex(payload.message);
@@ -134,26 +141,36 @@ app.post('/process-message', async (req, res) => {
     };
 
     const serverUrl = 'http://143.110.242.221:8080/process-verify';
+    console.log('[BACKUP MODE] Step 3: Calling VERIFY-API at', serverUrl);
     const serverResponse = await axios.post(
       serverUrl,
       serverPayload,
       {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 5000
+        timeout: 30000 // 30 second timeout
       }
     );
 
     const verifyResult = serverResponse.data;
+    console.log('[BACKUP MODE] Step 3: VERIFY-API response received, status:', verifyResult.status);
 
     // Return the combined results
+    console.log('[BACKUP MODE] Success! Returning combined results');
     return res.json({
       init_response: initData,
       verify_response: verifyResult
     });
   } catch (error) {
-    console.error('Backup mode error:', error.message);
+    console.error('[BACKUP MODE] Error occurred:', error.message);
+    console.error('[BACKUP MODE] Error details:', {
+      code: error.code,
+      response_status: error.response?.status,
+      response_data: error.response?.data
+    });
+
     return res.status(500).json({
       error: error.message,
+      error_code: error.code,
       details: error.response?.data || null
     });
   }
@@ -170,11 +187,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Start both the main server and the backup server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Main server running on port ${PORT}`);
 });
 
 // Also listen on the backup port for compatibility with existing code
-app.listen(BACKUP_PORT, () => {
+app.listen(BACKUP_PORT, '0.0.0.0', () => {
   console.log(`Backup server running on port ${BACKUP_PORT}`);
 });
