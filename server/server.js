@@ -3,8 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const app = express();
-const PORT = process.env.PORT || 5002;
-const BACKUP_PORT = process.env.BACKUP_PORT || 5001;
+// In production on server, use port 3000 (the only open port)
+// In development, use 5001 for backend
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 3000 : 5001);
 
 // Enable CORS for all requests
 // In development, allow all origins. In production, use whitelist.
@@ -186,12 +187,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Start both the main server and the backup server
+// Start the server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Main server running on port ${PORT}`);
-});
-
-// Also listen on the backup port for compatibility with existing code
-app.listen(BACKUP_PORT, '0.0.0.0', () => {
-  console.log(`Backup server running on port ${BACKUP_PORT}`);
+  console.log(`Server running on port ${PORT} (${process.env.NODE_ENV || 'development'} mode)`);
+  console.log(`Access the application at http://localhost:${PORT}`);
 });

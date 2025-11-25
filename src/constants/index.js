@@ -2,24 +2,10 @@
 export const PRIMARY_SCRUBBING_API = 'https://smartping-backend.goflipo.com/api/main/scrubbing-logs';
 export const PRIMARY_SMS_API = 'https://relit.in/app/smsapisr/index.php';
 
-// Use environment variable or fallback to current host for BACKUP_API
-const getBackupApiUrl = () => {
-  // If running in browser, use current origin + port 5001
-  if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol;
-    const hostname = window.location.hostname;
-    // If localhost, use localhost:5001, otherwise use hostname without port (Nginx proxy)
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `${protocol}//localhost:5001/process-message`;
-    }
-    // For production, use the same origin (Nginx will proxy to port 5001)
-    return `${protocol}//${hostname}/process-message`;
-  }
-  // Fallback for server-side rendering
-  return 'http://localhost:5001/process-message';
-};
-
-export const BACKUP_API = getBackupApiUrl();
+// Use relative URL for BACKUP_API - React dev server proxy will handle it
+// In development: proxied to localhost:5001 via package.json proxy config
+// In production: served from same origin, backend handles routing
+export const BACKUP_API = '/process-message';
 
 // Default form values
 export const DEFAULT_FORM_DATA = {
