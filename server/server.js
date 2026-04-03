@@ -106,6 +106,7 @@ app.post('/process-message', async (req, res) => {
       number: payload.number,
       content_id: payload.content_id,
       message_hex: messageHex,
+      encoding_type: payload.encoding_type || '8',
       environment  // forward environment so process-verify picks the right verify URL
     };
 
