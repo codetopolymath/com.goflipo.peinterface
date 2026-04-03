@@ -1,52 +1,59 @@
-import React from 'react';
-import { 
+import React, { useState, useCallback } from 'react';
+import {
   Box, TextField, Typography, Button, IconButton, Chip, InputAdornment,
   CircularProgress, Tabs, Tab
 } from '@mui/material';
-import { 
+import {
   Phone as PhoneIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
   Check as CheckIcon,
   Error as ErrorIcon,
   FormatListNumbered as ListIcon,
-  FileCopy as CopyIcon,
-  FileUpload as UploadIcon
+  FileUpload as UploadIcon,
+  Refresh as SampleIcon
 } from '@mui/icons-material';
 import { useSMS } from '../../contexts/SMSContext';
 
+const validatePhone = (num) => {
+  const digits = num.replace(/\D/g, '');
+  if (!num.trim()) return 'Phone number is required';
+  if (digits.length < 7) return 'Too short';
+  if (digits.length > 15) return 'Too long (max 15 digits)';
+  return null;
+};
+
 const SingleContactEntry = () => {
   const { contacts, handleContactChange, addContact, removeContact } = useSMS();
-  
-  // Improved text field style
+  const [touched, setTouched] = useState({});
+
+  const handleBlur = useCallback((index) => {
+    setTouched(prev => ({ ...prev, [index]: true }));
+  }, []);
+
   const textFieldSx = {
-    flex: 1, 
+    flex: 1,
     minWidth: '200px',
     '& .MuiOutlinedInput-root': {
       borderRadius: 2,
-      '&:hover fieldset': {
-        borderColor: 'primary.light',
-      },
-      '&.Mui-focused fieldset': {
-        borderColor: 'primary.main',
-        borderWidth: '1px',
-      }
+      '&:hover fieldset': { borderColor: 'primary.light' },
+      '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: '1px' }
     }
   };
 
   return (
     <>
-      {contacts.map((contact, index) => (
-        <Box 
-          key={index} 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            mb: 2.5, 
-            flexWrap: 'wrap', 
-            gap: 1,
-            position: 'relative',
-            transition: 'all 0.2s ease'
+      {contacts.map((contact, index) => {
+        const validationError = touched[index] ? validatePhone(contact.number) : null;
+        return (
+        <Box
+          key={index}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            mb: 2,
+            flexWrap: 'wrap',
+            gap: 1
           }}
         >
           <TextField
@@ -54,80 +61,73 @@ const SingleContactEntry = () => {
             label={`Phone Number ${index + 1}`}
             value={contact.number}
             onChange={(e) => handleContactChange(index, e.target.value)}
-            required 
-            variant="outlined" 
-            placeholder="Enter phone number with country code"
-            helperText={index === 0 ? "Include country code (e.g., +1 for US)" : ""}
-            InputProps={{ 
+            onBlur={() => handleBlur(index)}
+            error={!!validationError}
+            required
+            variant="outlined"
+            placeholder="e.g. 9876543210"
+            helperText={validationError || (index === 0 ? 'Enter number without country code prefix' : '')}
+            InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
                   <PhoneIcon color="primary" fontSize="small" />
                 </InputAdornment>
-              ) 
+              )
             }}
           />
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <IconButton 
-              color="error" 
+            <IconButton
+              color="error"
               onClick={() => removeContact(index)}
-              disabled={contacts.length === 1} 
+              disabled={contacts.length === 1}
               size="small"
-              sx={{ 
+              sx={{
                 border: '1px solid',
                 borderColor: contacts.length === 1 ? 'transparent' : 'error.light',
-                '&:hover': {
-                  backgroundColor: 'error.lighter',
-                }
               }}
             >
               <DeleteIcon fontSize="small" />
             </IconButton>
-            
+
             {contact.status === 'processing' && (
-              <CircularProgress 
-                size={24} 
-                thickness={5}
-                sx={{ ml: 1 }} 
-              />
+              <CircularProgress size={20} thickness={5} sx={{ ml: 0.5 }} />
             )}
-            
+
             {contact.status === 'success' && (
-              <Chip 
-                icon={<CheckIcon fontSize="small" />} 
-                label="Sent" 
-                color="success" 
-                size="small" 
+              <Chip
+                icon={<CheckIcon fontSize="small" />}
+                label="Verified"
+                color="success"
+                size="small"
                 variant="outlined"
-                sx={{ 
-                  borderRadius: 1.5,
-                  '& .MuiChip-label': { px: 1 } 
-                }}
+                sx={{ borderRadius: 1.5, '& .MuiChip-label': { px: 1 } }}
               />
             )}
-            
+
             {contact.status === 'error' && (
-              <Chip 
-                icon={<ErrorIcon fontSize="small" />} 
-                label="Failed" 
-                color="error" 
-                size="small" 
+              <Chip
+                icon={<ErrorIcon fontSize="small" />}
+                label="Failed"
+                color="error"
+                size="small"
                 variant="outlined"
-                sx={{ 
-                  borderRadius: 1.5,
-                  '& .MuiChip-label': { px: 1 } 
-                }}
+                sx={{ borderRadius: 1.5, '& .MuiChip-label': { px: 1 } }}
               />
             )}
           </Box>
         </Box>
-      ))}
-      
+        );
+      })}
+
       <Button
-        startIcon={<AddIcon />} onClick={addContact}
-        variant="outlined" color="primary" sx={{ mt: 1 }}
+        startIcon={<AddIcon />}
+        onClick={addContact}
+        variant="outlined"
+        color="primary"
+        sx={{ mt: 1 }}
       >
-        Add Another Contact
+        Add Another Number
       </Button>
     </>
   );
@@ -135,51 +135,43 @@ const SingleContactEntry = () => {
 
 const BulkContactEntry = () => {
   const { bulkNumbers, handleBulkNumbersChange, generateSampleNumbers } = useSMS();
-  
+
+  const lines = bulkNumbers.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const lineCount = lines.length;
+  const invalidCount = lines.filter(l => validatePhone(l) !== null).length;
+
   return (
-    <Box sx={{ mb: 2 }}>
-      <Box sx={{ 
-        mb: 2, 
-        display: 'flex', 
+    <Box>
+      <Box sx={{
+        mb: 1.5,
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        gap: 1
       }}>
-        <Typography 
-          variant="body2" 
-          color="text.secondary" 
-          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-        >
+        <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <ListIcon fontSize="small" color="primary" />
-          Enter multiple phone numbers (one per line)
+          One number per line
         </Typography>
-        
-        <Button 
-          size="small" 
-          startIcon={<CopyIcon />}
-          onClick={generateSampleNumbers} 
+
+        <Button
+          size="small"
+          startIcon={<SampleIcon />}
+          onClick={generateSampleNumbers}
           variant="outlined"
-          sx={{ 
-            borderRadius: 2,
-            textTransform: 'none',
-            mt: { xs: 1, sm: 0 },
-            ml: { xs: 0, sm: 'auto' }
-          }}
+          sx={{ borderRadius: 2 }}
         >
-          Generate Sample Data
+          Load Sample Data
         </Button>
       </Box>
-      
+
       <TextField
-        fullWidth 
-        multiline 
-        rows={6} 
-        placeholder="e.g.,
-+1234567890
-+1987654321
-+449876543210"
-        variant="outlined" 
-        margin="normal"
+        fullWidth
+        multiline
+        rows={6}
+        placeholder={'9876543210\n8765432109\n7654321098'}
+        variant="outlined"
         value={bulkNumbers}
         onChange={handleBulkNumbersChange}
         sx={{
@@ -187,34 +179,33 @@ const BulkContactEntry = () => {
             borderRadius: 2,
             fontFamily: 'monospace',
             fontSize: '0.9rem',
-            '&:hover fieldset': {
-              borderColor: 'primary.light',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: 'primary.main',
-              borderWidth: '1px',
-            }
+            '&:hover fieldset': { borderColor: 'primary.light' },
+            '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: '1px' }
           }
         }}
-        InputProps={{ 
+        InputProps={{
           startAdornment: (
             <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}>
               <UploadIcon color="primary" />
             </InputAdornment>
-          ) 
+          )
         }}
       />
-      
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        mt: 1
-      }}>
-        <Chip 
-          label={`${bulkNumbers.split('\n').filter(line => line.trim().length > 0).length} numbers`} 
-          size="small" 
-          color="primary"
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 1, gap: 1 }}>
+        {invalidCount > 0 && (
+          <Chip
+            label={`${invalidCount} invalid`}
+            size="small"
+            color="error"
+            variant="outlined"
+            sx={{ borderRadius: 1.5 }}
+          />
+        )}
+        <Chip
+          label={`${lineCount} number${lineCount !== 1 ? 's' : ''}`}
+          size="small"
+          color={lineCount > 0 ? 'primary' : 'default'}
           variant="outlined"
           sx={{ borderRadius: 1.5 }}
         />
@@ -225,75 +216,37 @@ const BulkContactEntry = () => {
 
 const ContactsInput = () => {
   const { inputMode, handleTabChange } = useSMS();
-  
+
   return (
-    <Box sx={{ mb: 3 }}>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        mb: 2, 
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        pb: 1
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <PhoneIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-          <Typography variant="h6" fontWeight={500} color="text.primary">
-            Recipients
-          </Typography>
-        </Box>
-        
-        <Typography 
-          variant="body2" 
-          color="text.secondary" 
-          sx={{ 
-            mt: { xs: 1, sm: 0 },
-            fontStyle: 'italic'
-          }}
-        >
-          Choose a method to enter your recipient numbers
-        </Typography>
-      </Box>
-      
-      {/* Tabs for switching between input modes */}
-      <Tabs 
-        value={inputMode} 
-        onChange={handleTabChange} 
-        sx={{ 
-          mb: 3,
+    <Box>
+      <Tabs
+        value={inputMode}
+        onChange={handleTabChange}
+        sx={{
+          mb: 2.5,
           '& .MuiTab-root': {
-            minHeight: 48,
+            minHeight: 44,
             borderRadius: '8px 8px 0 0',
+            fontSize: '0.85rem'
           },
           '& .Mui-selected': {
-            backgroundColor: 'rgba(25, 118, 210, 0.05)',
-            fontWeight: 500
+            backgroundColor: 'rgba(58, 134, 255, 0.06)',
+            fontWeight: 600
           },
           '& .MuiTabs-indicator': {
             height: 3,
             borderRadius: '3px 3px 0 0'
           }
         }}
-        indicatorColor="primary" 
+        indicatorColor="primary"
         textColor="primary"
       >
-        <Tab 
-          icon={<PhoneIcon fontSize="small" />} 
-          iconPosition="start" 
-          label="Single Entry" 
-        />
-        <Tab 
-          icon={<ListIcon fontSize="small" />} 
-          iconPosition="start" 
-          label="Bulk Entry" 
-        />
+        <Tab icon={<PhoneIcon fontSize="small" />} iconPosition="start" label="Single" />
+        <Tab icon={<ListIcon fontSize="small" />} iconPosition="start" label="Bulk" />
       </Tabs>
-      
-      {/* Input mode content */}
-      <Box sx={{ 
-        p: 2, 
+
+      <Box sx={{
+        p: 2,
         bgcolor: 'background.default',
         borderRadius: 2,
         border: '1px solid',

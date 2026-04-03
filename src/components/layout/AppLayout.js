@@ -1,244 +1,152 @@
-import React, { useState } from 'react';
-import { 
-  AppBar, Toolbar, Typography, Box, Container, IconButton, 
-  Link, Tooltip, Menu, MenuItem, Divider, Switch,
-  Drawer, List, ListItem, ListItemIcon, 
-  ListItemText, Button
+import React, { useState, useMemo } from 'react';
+import {
+  AppBar, Toolbar, Typography, Box, Container, IconButton,
+  Tooltip, Drawer, List, ListItem, ListItemButton, ListItemIcon,
+  ListItemText, Divider, Switch
 } from '@mui/material';
-import { 
-  Send as SendIcon, 
+import {
+  Send as SendIcon,
   Menu as MenuIcon,
   Brightness7 as LightModeIcon,
   DarkMode as DarkModeIcon,
-  Help as HelpIcon,
-  Info as InfoIcon, 
-  Settings as SettingsIcon,
-  Person as UserIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
 const AppLayout = ({ children }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
-  const theme = createTheme({
+  // Memoize theme so it is only recreated when darkMode changes
+  const theme = useMemo(() => createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
-      ...(darkMode ? {
-        primary: { 
-          main: '#bb86fc', 
-          light: '#e0b3ff', 
-          dark: '#985eff' 
-        },
-        secondary: { 
-          main: '#03dac6', 
-          light: '#70efde', 
-          dark: '#00b3a6' 
-        },
-        background: {
-          default: '#121212',
-          paper: 'rgba(30, 30, 30, 0.8)'
-        },
-        text: {
-          primary: '#e0e0e0',
-          secondary: '#b0b0b0'
-        },
-        divider: 'rgba(255, 255, 255, 0.12)'
-      } : {}),
+      primary: darkMode
+        ? { main: '#bb86fc', light: '#e0b3ff', dark: '#985eff' }
+        : { main: '#3a86ff', light: '#60a5fa', dark: '#2563eb' },
+      secondary: darkMode
+        ? { main: '#03dac6', light: '#70efde', dark: '#00b3a6' }
+        : { main: '#8b5cf6', light: '#a78bfa', dark: '#7c3aed' },
+      success: { main: '#10b981', light: '#34d399', dark: '#059669' },
+      error: { main: '#ef4444', light: '#f87171', dark: '#dc2626' },
+      warning: { main: '#f59e0b', light: '#fbbf24', dark: '#d97706' },
+      info: { main: '#3b82f6', light: '#60a5fa', dark: '#2563eb' },
+      background: darkMode
+        ? { default: '#121212', paper: 'rgba(30, 30, 30, 0.9)' }
+        : { default: '#f8fafc', paper: 'rgba(255, 255, 255, 0.92)' },
+      text: darkMode
+        ? { primary: '#e0e0e0', secondary: '#b0b0b0' }
+        : {},
+      divider: darkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0,0,0,0.08)'
+    },
+    typography: {
+      fontFamily: '"Inter", "Roboto", "Helvetica Neue", sans-serif',
+      button: { textTransform: 'none', fontWeight: 500 },
+      h5: { fontWeight: 700 },
+      h6: { fontWeight: 600 }
     },
     components: {
-      ...(darkMode ? {
-        MuiPaper: {
-          styleOverrides: {
-            root: {
-              backgroundImage: 'none',
-              backdropFilter: 'blur(10px)',
-              backgroundColor: 'rgba(30, 30, 30, 0.8)',
-              borderColor: 'rgba(255, 255, 255, 0.12)',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)'
-            }
-          }
-        },
-        MuiAppBar: {
-          styleOverrides: {
-            root: {
-              backgroundImage: 'linear-gradient(135deg, #3a0c6e, #6a1b9a)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2)'
-            }
-          }
-        },
-        MuiButton: {
-          styleOverrides: { 
-            contained: {
-              backgroundImage: 'linear-gradient(135deg, #bb86fc, #985eff)',
-            },
-            outlined: {
-              borderColor: 'rgba(187, 134, 252, 0.5)',
-              '&:hover': {
-                borderColor: '#bb86fc',
-                backgroundColor: 'rgba(187, 134, 252, 0.1)'
-              }
-            }
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+            backdropFilter: 'blur(10px)',
+            backgroundColor: darkMode ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.92)',
+            boxShadow: darkMode
+              ? '0 10px 15px -3px rgba(0,0,0,0.3)'
+              : '0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -2px rgba(0,0,0,0.04)'
           }
         }
-      } : {
-        MuiPaper: {
-          styleOverrides: {
-            root: {
-              borderRadius: 16,
-              backdropFilter: 'blur(10px)',
-              backgroundColor: 'rgba(255, 255, 255, 0.85)',
-              border: '1px solid rgba(255, 255, 255, 0.8)',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.04)'
-            }
+      },
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundImage: darkMode
+              ? 'linear-gradient(135deg, #3a0c6e, #6a1b9a)'
+              : 'linear-gradient(135deg, #3a86ff, #2563eb)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
           }
-        },
-        MuiAppBar: {
-          styleOverrides: {
-            root: {
-              backgroundImage: 'linear-gradient(135deg, #3a86ff, #2563eb)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.06)'
+        }
+      },
+      MuiButton: {
+        styleOverrides: {
+          contained: {
+            backgroundImage: darkMode
+              ? 'linear-gradient(135deg, #bb86fc, #985eff)'
+              : 'linear-gradient(135deg, #3a86ff, #2563eb)',
+            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+            '&:hover': {
+              boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+              transform: 'translateY(-1px)'
             }
-          }
-        },
-        MuiButton: {
-          styleOverrides: {
-            contained: {
-              backgroundImage: 'linear-gradient(135deg, #3a86ff, #2563eb)',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              '&:hover': {
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                transform: 'translateY(-1px)'
-              }
+          },
+          outlined: darkMode ? {
+            borderColor: 'rgba(187,134,252,0.5)',
+            '&:hover': {
+              borderColor: '#bb86fc',
+              backgroundColor: 'rgba(187,134,252,0.08)'
             }
-          }
-        },
-      })
+          } : {}
+        }
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: { borderRadius: 12 }
+        }
+      }
     }
-  });
+  }), [darkMode]);
 
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-  
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+  const toggleMobileMenu = () => setMobileMenuOpen(prev => !prev);
+  const handleThemeToggle = () => setDarkMode(prev => !prev);
 
-  const handleThemeToggle = () => {
-    setDarkMode((prevMode) => !prevMode);
-  };
-  
-  const menuItems = [
-    { label: 'Settings', icon: <SettingsIcon fontSize="small" /> },
-    { label: 'Help', icon: <HelpIcon fontSize="small" /> },
-    { label: 'About', icon: <InfoIcon fontSize="small" /> }
-  ];
-  
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ 
-        flexGrow: 1, 
-        minHeight: '100vh', 
-        display: 'flex', 
+      <Box sx={{
+        flexGrow: 1,
+        minHeight: '100vh',
+        display: 'flex',
         flexDirection: 'column',
         bgcolor: 'background.default'
       }}>
         {/* Header */}
-        <AppBar 
-          position="static" 
-          color="primary" 
-          elevation={0}
-          sx={{ 
-            backdropFilter: 'blur(20px)',
-            backgroundColor: 'rgba(25, 118, 210, 0.95)'
-          }}
-        >
+        <AppBar position="static" color="primary" elevation={0}>
           <Toolbar sx={{ px: { xs: 2, sm: 4 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <SendIcon sx={{ mr: 1.5, fontSize: 28 }} />
-              <Typography 
-                variant="h6" 
-                component="div" 
-                sx={{ 
-                  fontWeight: 600,
-                  letterSpacing: 0.5,
-                  display: { xs: 'none', sm: 'block' }
-                }}
-              >
-                SMS Sender
-              </Typography>
-            </Box>
-            
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                ml: 2, 
-                flexGrow: 1,
-                display: { xs: 'none', md: 'block' },
-                color: 'primary.contrastText',
-                opacity: 0.8
-              }}
-            >
-              Easy SMS Delivery Platform
-            </Typography>
-            
-            {/* Desktop Menu */}
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
-              {menuItems.map((item) => (
-                <Button 
-                  key={item.label} 
-                  color="inherit" 
-                  startIcon={item.icon}
-                  sx={{ mx: 0.5, opacity: 0.9, '&:hover': { opacity: 1 } }}
+            {/* Brand */}
+            <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+              <SendIcon sx={{ mr: 1.5, fontSize: 26 }} />
+              <Box>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+                  PE Interface
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    opacity: 0.75,
+                    display: { xs: 'none', sm: 'block' },
+                    lineHeight: 1
+                  }}
                 >
-                  {item.label}
-                </Button>
-              ))}
-              
-              <Tooltip title="Toggle light/dark mode">
-                <IconButton color="inherit" sx={{ ml: 1 }} onClick={handleThemeToggle}>
-                  {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
-                </IconButton>
-              </Tooltip>
-              
-              <Tooltip title="Your account">
-                <IconButton 
-                  color="inherit" 
-                  onClick={handleMenuOpen}
-                  sx={{ ml: 1 }}
-                >
-                  <UserIcon />
-                </IconButton>
-              </Tooltip>
-              
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  elevation: 2,
-                  sx: { mt: 1.5, minWidth: 180 }
-                }}
-              >
-                <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-                <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-                <Divider />
-                <MenuItem onClick={handleMenuClose}>Sign out</MenuItem>
-              </Menu>
+                  Goflipo Scrubbing Demo
+                </Typography>
+              </Box>
             </Box>
-            
-            {/* Mobile menu button */}
+
+            {/* Dark mode toggle — desktop */}
+            <Tooltip title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+              <IconButton
+                color="inherit"
+                onClick={handleThemeToggle}
+                sx={{ display: { xs: 'none', md: 'flex' } }}
+              >
+                {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+              </IconButton>
+            </Tooltip>
+
+            {/* Mobile hamburger */}
             <IconButton
               color="inherit"
               edge="end"
@@ -249,68 +157,64 @@ const AppLayout = ({ children }) => {
             </IconButton>
           </Toolbar>
         </AppBar>
-        
-        {/* Mobile Menu Drawer */}
+
+        {/* Mobile Drawer */}
         <Drawer
           anchor="right"
           open={mobileMenuOpen}
           onClose={toggleMobileMenu}
-          PaperProps={{
-            sx: { width: '80%', maxWidth: 300 }
-          }}
+          PaperProps={{ sx: { width: 260 } }}
         >
-          <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <IconButton onClick={toggleMobileMenu}>
+          <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle1" fontWeight={600}>Menu</Typography>
+            <IconButton onClick={toggleMobileMenu} size="small">
               <CloseIcon />
             </IconButton>
           </Box>
           <Divider />
-          <List>
-            {menuItems.map((item) => (
-              <ListItem button key={item.label} onClick={toggleMobileMenu}>
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItem>
-            ))}
-            <ListItem>
-              <ListItemIcon>{darkMode ? <LightModeIcon /> : <DarkModeIcon />}</ListItemIcon>
-              <ListItemText primary="Dark Mode" />
-              <Switch 
-                edge="end" 
-                checked={darkMode} 
-                onChange={handleThemeToggle} 
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: '#bb86fc',
-                    '&:hover': { backgroundColor: 'rgba(187, 134, 252, 0.08)' },
-                    '& + .MuiSwitch-track': { backgroundColor: '#985eff' }
-                  },
-                  '& .MuiSwitch-thumb': { boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.2)' }
-                }}
-              />
+          <List disablePadding>
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleThemeToggle}>
+                <ListItemIcon>
+                  {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+                </ListItemIcon>
+                <ListItemText primary="Dark Mode" />
+                <Switch
+                  edge="end"
+                  checked={darkMode}
+                  onChange={handleThemeToggle}
+                  onClick={e => e.stopPropagation()}
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: '#bb86fc',
+                      '& + .MuiSwitch-track': { backgroundColor: '#985eff' }
+                    }
+                  }}
+                />
+              </ListItemButton>
             </ListItem>
           </List>
         </Drawer>
-        
+
         {/* Main Content */}
-        <Container 
-          maxWidth="lg" 
-          sx={{ 
-            mt: { xs: 3, sm: 4 }, 
-            mb: 6, 
+        <Container
+          maxWidth="lg"
+          sx={{
+            mt: { xs: 3, sm: 4 },
+            mb: 6,
             px: { xs: 2, sm: 3 },
-            flexGrow: 1 
+            flexGrow: 1
           }}
         >
           {children}
         </Container>
-        
+
         {/* Footer */}
-        <Box 
-          component="footer" 
-          sx={{ 
-            py: 3, 
-            px: 2, 
+        <Box
+          component="footer"
+          sx={{
+            py: 2.5,
+            px: 2,
             mt: 'auto',
             backgroundColor: 'background.paper',
             borderTop: 1,
@@ -318,33 +222,9 @@ const AppLayout = ({ children }) => {
           }}
         >
           <Container maxWidth="lg">
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: { xs: 'column', sm: 'row' },
-              justifyContent: 'space-between',
-              alignItems: { xs: 'center', sm: 'flex-start' },
-              textAlign: { xs: 'center', sm: 'left' }
-            }}>
-              <Typography variant="body2" color="text.secondary">
-                © {new Date().getFullYear()} SMS Sender App. All rights reserved.
-              </Typography>
-              
-              <Box sx={{ 
-                display: 'flex', 
-                gap: 2, 
-                mt: { xs: 1.5, sm: 0 }
-              }}>
-                <Link href="#" color="text.secondary" underline="hover">
-                  Privacy Policy
-                </Link>
-                <Link href="#" color="text.secondary" underline="hover">
-                  Terms of Service
-                </Link>
-                <Link href="#" color="text.secondary" underline="hover">
-                  Contact
-                </Link>
-              </Box>
-            </Box>
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              © {new Date().getFullYear()} Goflipo — PE Interface Demo
+            </Typography>
           </Container>
         </Box>
       </Box>

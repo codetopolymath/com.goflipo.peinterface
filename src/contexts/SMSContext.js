@@ -1,13 +1,10 @@
 import React, { createContext, useContext, useState } from 'react';
-import { DEFAULT_FORM_DATA, DEFAULT_CONTACT, MESSAGE_TEMPLATES } from '../constants';
-import { fetchScrubbingLogs, sendSMS, processBackupAPI } from '../services/apiService';
+import { DEFAULT_FORM_DATA, DEFAULT_CONTACT, MESSAGE_TEMPLATES, DEFAULT_ENVIRONMENT } from '../constants';
+import { processBackupAPI } from '../services/apiService';
 
-// Create context
 const SMSContext = createContext();
 
-// Context provider component
 export const SMSProvider = ({ children }) => {
-  // State
   const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
   const [contacts, setContacts] = useState([DEFAULT_CONTACT]);
   const [response, setResponse] = useState({ loading: false, success: false, error: null, message: '' });
@@ -16,7 +13,7 @@ export const SMSProvider = ({ children }) => {
   const [inputMode, setInputMode] = useState(0);
   const [bulkNumbers, setBulkNumbers] = useState('');
   const [corsError, setCorsError] = useState(false);
-  const [apiMode, setApiMode] = useState('backup'); // Changed to backup as default since it's used 95% of the time
+  const [environment, setEnvironment] = useState(DEFAULT_ENVIRONMENT);
   const [messageType, setMessageType] = useState('SIMPLE MESSAGE');
 
   // Form handlers
@@ -26,35 +23,28 @@ export const SMSProvider = ({ children }) => {
   };
 
   const handleContactChange = (index, value) => {
-    const updatedContacts = [...contacts];
-    updatedContacts[index].number = value;
-    setContacts(updatedContacts);
+    setContacts(prev => prev.map((c, i) => i === index ? { ...c, number: value } : c));
   };
 
   const handleBulkNumbersChange = (e) => setBulkNumbers(e.target.value);
 
   const handleTabChange = (event, newValue) => {
     setInputMode(newValue);
-    
+
     if (newValue === 0 && contacts.length > 0) {
-      setContacts([contacts[0]]);
+      // Reset status when switching back to single entry so stale indicators don't show
+      setContacts([{ ...contacts[0], status: 'pending', result: null, error: null }]);
     }
-    
+
     if (newValue === 1) {
       const numbersText = contacts.map(contact => contact.number).join('\n');
       setBulkNumbers(numbersText);
     }
   };
 
-  const handleApiModeChange = (event, newMode) => {
-    if (newMode !== null) {
-      setApiMode(newMode);
-      // Reset coverage for different modes
-      if (newMode === 'backup') {
-        setFormData(prev => ({ ...prev, coverage: '+91' }));
-      } else {
-        setFormData(prev => ({ ...prev, coverage: '91' }));
-      }
+  const handleEnvironmentChange = (event, newEnv) => {
+    if (newEnv !== null) {
+      setEnvironment(newEnv);
     }
   };
 
@@ -74,33 +64,29 @@ export const SMSProvider = ({ children }) => {
   };
 
   const generateSampleNumbers = () => {
-    setBulkNumbers("9876543210\n8765432109\n7654321098\n6543210987\n5432109876");
+    setBulkNumbers('9876543210\n8765432109\n7654321098\n6543210987\n5432109876');
   };
 
-  const processBulkNumbers = () => {
+  // Returns parsed contacts array, or null if invalid
+  const parseBulkNumbers = () => {
     const numbers = bulkNumbers
       .split('\n')
       .map(num => num.trim())
       .filter(num => num.length > 0);
-    
+
     if (numbers.length === 0) {
       setResponse({
         loading: false,
         success: false,
-        error: "Please enter at least one phone number",
-        message: "Please enter at least one phone number"
+        error: 'Please enter at least one phone number',
+        message: 'Please enter at least one phone number'
       });
-      return false;
+      return null;
     }
-    
-    const newContacts = numbers.map(number => ({
-      number,
-      status: 'pending',
-      result: null
-    }));
-    
+
+    const newContacts = numbers.map(number => ({ number, status: 'pending', result: null }));
     setContacts(newContacts);
-    return true;
+    return newContacts;
   };
 
   // Dialog actions
@@ -111,148 +97,120 @@ export const SMSProvider = ({ children }) => {
 
   const closeDetails = () => setDetailsOpen(false);
 
-  // Form actions
+  // Form reset
   const resetForm = () => {
     setFormData(DEFAULT_FORM_DATA);
     setContacts([DEFAULT_CONTACT]);
     setBulkNumbers('');
+    setInputMode(0);
+    setCorsError(false);
     setResponse({ loading: false, success: false, error: null, message: '' });
     setMessageType('SIMPLE MESSAGE');
   };
 
-  // Process a single contact
-  const processContact = async (contact, index) => {
+  // Process a single contact — returns { success, isCorsError }
+  const processContact = async (contact, index, localEnv) => {
+    setContacts(prev => prev.map((c, i) => i === index ? { ...c, status: 'processing' } : c));
+
     try {
-      setContacts(prevContacts => {
-        const updated = [...prevContacts];
-        updated[index].status = 'processing';
-        return updated;
-      });
-      
-      if (apiMode === 'primary') {
-        // Primary flow
-        const scrubbingResponse = await fetchScrubbingLogs({
-          ...formData,
-          number: contact.number
-        });
-        
-        if (scrubbingResponse.status && scrubbingResponse.data && scrubbingResponse.data.authcode) {
-          const authcode = scrubbingResponse.data.authcode;
-          const smsResponse = await sendSMS({
-            ...formData,
-            number: contact.number
-          }, authcode);
-          
-          setContacts(prevContacts => {
-            const updated = [...prevContacts];
-            updated[index].status = 'success';
-            updated[index].result = { scrubbing: scrubbingResponse, sms: smsResponse };
-            return updated;
-          });
-          
-          return true;
-        } else {
-          throw new Error('Failed to get valid authcode from scrubbing API');
-        }
-      } else {
-        // Backup flow
-        const payload = {
-          senderid: formData.senderid,
-          pe_id: formData.pe_id,
-          number: contact.number,
-          content_id: formData.content_id,
-          message: formData.message
-        };
-        
-        const backupResponse = await processBackupAPI(payload);
-        
-        setContacts(prevContacts => {
-          const updated = [...prevContacts];
-          updated[index].status = 'success';
-          updated[index].result = backupResponse;
-          return updated;
-        });
-        
-        return true;
-      }
+      const payload = {
+        senderid: formData.senderid,
+        pe_id: formData.pe_id,
+        number: contact.number,
+        content_id: formData.content_id,
+        message: formData.message,
+        environment: localEnv
+      };
+
+      const backupResponse = await processBackupAPI(payload);
+
+      setContacts(prev => prev.map((c, i) =>
+        i === index ? { ...c, status: 'success', result: backupResponse, error: null } : c
+      ));
+
+      return { success: true, isCorsError: false };
     } catch (error) {
-      if (error.message.includes('CORS')) {
+      const isCorsError = error.message.includes('CORS') ||
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('NetworkError');
+
+      if (isCorsError) {
         setCorsError(true);
       }
-      
-      setContacts(prevContacts => {
-        const updated = [...prevContacts];
-        updated[index].status = 'error';
-        updated[index].error = error.message;
-        return updated;
-      });
-      
-      return false;
+
+      setContacts(prev => prev.map((c, i) =>
+        i === index ? { ...c, status: 'error', error: error.message } : c
+      ));
+
+      return { success: false, isCorsError };
     }
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     setCorsError(false);
-    
+
+    let activeContacts = contacts;
+
     if (inputMode === 1) {
-      const success = processBulkNumbers();
-      if (!success) return;
+      const parsed = parseBulkNumbers();
+      if (!parsed) return;
+      activeContacts = parsed;
     }
-    
-    const emptyContacts = contacts.filter(contact => !contact.number.trim());
+
+    const emptyContacts = activeContacts.filter(c => !c.number.trim());
     if (emptyContacts.length > 0) {
       setResponse({
         loading: false,
         success: false,
-        error: "Please enter all contact numbers",
-        message: "Please enter all contact numbers"
+        error: 'Please enter all contact numbers',
+        message: 'Please enter all contact numbers'
       });
       return;
     }
-    
+
     setResponse({
       loading: true,
-      success: false, 
+      success: false,
       error: null,
-      message: `Processing ${contacts.length} contact(s) using ${apiMode} mode...`
+      message: `Processing ${activeContacts.length} contact(s)...`
     });
-    
-    setContacts(prevContacts => prevContacts.map(contact => ({
-      ...contact,
-      status: 'pending',
-      result: null,
-      error: null
-    })));
-    
+
+    setContacts(activeContacts.map(c => ({ ...c, status: 'pending', result: null, error: null })));
+
     let successCount = 0;
     let errorCount = 0;
-    
-    for (let i = 0; i < contacts.length; i++) {
-      if (corsError) break;
-      
-      const success = await processContact(contacts[i], i);
+    let localCorsError = false;
+
+    for (let i = 0; i < activeContacts.length; i++) {
+      if (localCorsError) break;
+
+      const { success, isCorsError } = await processContact(activeContacts[i], i, environment);
+
+      if (isCorsError) {
+        localCorsError = true;
+        break;
+      }
+
       if (success) {
         successCount++;
       } else {
         errorCount++;
-        if (corsError) break;
       }
     }
-    
+
     setResponse({
       loading: false,
       success: successCount > 0,
-      error: corsError 
-        ? 'CORS Error: Unable to access the API directly.' 
-        : errorCount > 0 
-          ? `Failed to send SMS to ${errorCount} contact(s)` 
-          : null,
-      message: corsError 
+      error: localCorsError
         ? 'CORS Error: Unable to access the API directly.'
-        : `Successfully sent SMS to ${successCount} out of ${contacts.length} contact(s) using ${apiMode} mode`
+        : errorCount > 0
+          ? `Failed to send to ${errorCount} contact(s)`
+          : null,
+      message: localCorsError
+        ? 'CORS Error: Unable to access the API directly.'
+        : `Successfully processed ${successCount} out of ${activeContacts.length} contact(s) [${environment}]`
     });
   };
 
@@ -266,27 +224,27 @@ export const SMSProvider = ({ children }) => {
     inputMode,
     bulkNumbers,
     corsError,
-    apiMode,
+    environment,
     messageType,
     MESSAGE_TEMPLATES,
-    
-    // Form handlers
+
+    // Handlers
     handleChange,
     handleContactChange,
     handleBulkNumbersChange,
     handleTabChange,
-    handleApiModeChange,
+    handleEnvironmentChange,
     handleMessageTypeChange,
-    
+
     // Contact actions
     addContact,
     removeContact,
     generateSampleNumbers,
-    
+
     // Dialog actions
     showDetails,
     closeDetails,
-    
+
     // Form actions
     resetForm,
     handleSubmit
@@ -299,7 +257,6 @@ export const SMSProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use the SMS context
 export const useSMS = () => {
   const context = useContext(SMSContext);
   if (!context) {

@@ -1,79 +1,48 @@
-// server.js - Enhanced proxy server to handle CORS and backup mode
+// server.js - Proxy server for PE Interface
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const app = express();
-// In production on server, use port 3000 (the only open port)
-// In development, use 5001 for backend
+
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 3000 : 5001);
 
-// Enable CORS for all requests
-// In development, allow all origins. In production, use whitelist.
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-var corsOptions = isDevelopment
+const corsOptions = isDevelopment
   ? {
-      origin: true, // Allow all origins in development
+      origin: true,
       credentials: true,
-      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       optionsSuccessStatus: 204
     }
   : {
       origin: [
-        "http://peinterface.goflipo.in",
-        "https://peinterface.goflipo.in",
-        "http://localhost:3000",
-        "http://64.227.156.167",
-        "http://64.227.156.167:3000",
-        "http://64.227.156.167:5001",
-        "http://64.227.156.167:5002"
+        'http://peinterface.goflipo.in',
+        'https://peinterface.goflipo.in',
+        'http://localhost:3000',
+        'http://64.227.156.167',
+        'http://64.227.156.167:3000',
+        'http://64.227.156.167:5001',
+        'http://64.227.156.167:5002'
       ],
-      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       preflightContinue: false,
       optionsSuccessStatus: 204,
       credentials: true
-    }
+    };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Proxy endpoint for scrubbing logs API
-app.get('/api/scrubbing-logs', async (req, res) => {
-  try {
-    const params = new URLSearchParams(req.query);
-    const response = await axios.get(
-      `https://stage-smartping-backend.goflipo.com/api/main/scrubbing-logs?${params.toString()}`
-    );
-    res.json(response.data);
-  } catch (error) {
-    console.error('Proxy error:', error.message);
-    res.status(error.response?.status || 500).json({
-      status: false,
-      message: `Proxy error: ${error.message}`,
-      error: error.response?.data || null
-    });
-  }
-});
+// Environment-based API URL configuration
+const SCRUBBING_URLS = {
+  demo: 'https://stage-smartping-backend.goflipo.com/api/main/scrubbing-logs',
+  production: 'https://central-be.goflipo.com/api/main/scrubbing-logs'
+};
 
-// Proxy endpoint for SMS API
-app.get('/api/send-sms', async (req, res) => {
-  try {
-    const params = new URLSearchParams(req.query);
-    const response = await axios.get(
-      `https://relit.in/app/smsapisr/index.php?${params.toString()}`
-    );
-    res.json(response.data);
-  } catch (error) {
-    console.error('Proxy error:', error.message);
-    res.status(error.response?.status || 500).json({
-      status: false,
-      message: `Proxy error: ${error.message}`,
-      error: error.response?.data || null
-    });
-  }
-});
+const PROCESS_VERIFY_URL = 'http://143.110.242.221:8080/process-verify';
 
-// Text to Hex conversion utility (equivalent to Python's text_to_hex)
+// Text to Hex conversion utility
 const textToHex = (text) => {
   let result = '';
   for (let i = 0; i < text.length; i++) {
@@ -83,12 +52,12 @@ const textToHex = (text) => {
   return result;
 };
 
-// Backup mode endpoint (equivalent to Python's process-message)
+// Main endpoint — scrubbing + verify flow
 app.post('/process-message', async (req, res) => {
-  // Get payload from the API request
   const payload = req.body;
+  const VALID_ENVS = ['demo', 'production'];
+  const environment = VALID_ENVS.includes(payload.environment) ? payload.environment : 'demo';
 
-  // Validate required fields
   const requiredFields = ['senderid', 'pe_id', 'number', 'content_id', 'message'];
   const missingFields = requiredFields.filter(field => !payload[field]);
 
@@ -98,72 +67,71 @@ app.post('/process-message', async (req, res) => {
     });
   }
 
-  try {
-    console.log('[BACKUP MODE] Starting process-message for number:', payload.number);
+  const scrubbingUrl = SCRUBBING_URLS[environment] || SCRUBBING_URLS.demo;
+  console.log(`[${environment.toUpperCase()}] Starting process-message for number: ${payload.number}`);
+  console.log(`[${environment.toUpperCase()}] Step 1: Calling scrubbing-logs at ${scrubbingUrl}`);
 
-    // Step 1: Call INIT-API (Scrubbing Logs)
-    console.log('[BACKUP MODE] Step 1: Calling INIT-API (scrubbing-logs)...');
+  try {
+    // Step 1: Call scrubbing-logs (INIT-API)
     const initResponse = await axios.post(
-      'https://stage-smartping-backend.goflipo.com/api/main/scrubbing-logs',
+      scrubbingUrl,
       payload,
       {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 30000 // 30 second timeout
+        timeout: 30000
       }
     );
 
     const initData = initResponse.data;
-    console.log('[BACKUP MODE] Step 1: INIT-API response received, status:', initData.status);
+    console.log(`[${environment.toUpperCase()}] Step 1: Response received, status: ${initData.status}`);
 
-    // Check if the call was successful
     if (!initData.status) {
-      console.error('[BACKUP MODE] Step 1: INIT-API call failed:', initData);
+      console.error(`[${environment.toUpperCase()}] Step 1: scrubbing-logs failed:`, initData);
       return res.status(500).json({
-        error: 'INIT-API call failed',
+        error: 'Scrubbing API call failed',
         details: initData
       });
     }
 
-    // Step 2: Get authcode and prepare for server call
+    // Step 2: Prepare verify payload
     const authcode = initData.data.authcode;
-    console.log('[BACKUP MODE] Step 2: Authcode received:', authcode);
+    console.log(`[${environment.toUpperCase()}] Step 2: Authcode received: ${authcode}`);
 
-    // Convert message to hex for VERIFY-API
     const messageHex = textToHex(payload.message);
 
-    // Step 3: Call server API for verification
-    const serverPayload = {
-      authcode: authcode,
+    const verifyPayload = {
+      authcode,
       senderid: payload.senderid,
       pe_id: payload.pe_id,
       number: payload.number,
       content_id: payload.content_id,
-      message_hex: messageHex
+      message_hex: messageHex,
+      environment  // forward environment so process-verify picks the right verify URL
     };
 
-    const serverUrl = 'http://143.110.242.221:8080/process-verify';
-    console.log('[BACKUP MODE] Step 3: Calling VERIFY-API at', serverUrl);
-    const serverResponse = await axios.post(
-      serverUrl,
-      serverPayload,
+    // Step 3: Call process-verify wrapper
+    console.log(`[${environment.toUpperCase()}] Step 3: Calling process-verify at ${PROCESS_VERIFY_URL}`);
+    const verifyResponse = await axios.post(
+      PROCESS_VERIFY_URL,
+      verifyPayload,
       {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 30000 // 30 second timeout
+        timeout: 30000
       }
     );
 
-    const verifyResult = serverResponse.data;
-    console.log('[BACKUP MODE] Step 3: VERIFY-API response received, status:', verifyResult.status);
+    const verifyResult = verifyResponse.data;
+    console.log(`[${environment.toUpperCase()}] Step 3: Verify response received`);
 
-    // Return the combined results
-    console.log('[BACKUP MODE] Success! Returning combined results');
+    console.log(`[${environment.toUpperCase()}] Success! Returning combined results`);
     return res.json({
       init_response: initData,
       verify_response: verifyResult
     });
+
   } catch (error) {
-    console.error('[BACKUP MODE] Error occurred:', error.message);
-    console.error('[BACKUP MODE] Error details:', {
+    console.error(`[${environment.toUpperCase()}] Error:`, error.message);
+    console.error(`[${environment.toUpperCase()}] Details:`, {
       code: error.code,
       response_status: error.response?.status,
       response_data: error.response?.data
@@ -180,14 +148,12 @@ app.post('/process-message', async (req, res) => {
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
-  // Build folder is at the root level, not in client folder
   app.use(express.static(path.join(__dirname, '..', 'build')));
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '..', 'build', 'index.html'));
   });
 }
 
-// Start the server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT} (${process.env.NODE_ENV || 'development'} mode)`);
   console.log(`Access the application at http://localhost:${PORT}`);

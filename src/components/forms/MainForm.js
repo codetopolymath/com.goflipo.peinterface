@@ -94,14 +94,14 @@ const MainForm = () => {
             }}
           >
             <SendIcon sx={{ mr: 1.5, opacity: 0.7 }} fontSize="medium" />
-            Send SMS Message
+            Scrubbing Verification
           </Typography>
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
+          <Typography
+            variant="body2"
+            color="text.secondary"
             sx={{ mt: 0.5, maxWidth: '600px' }}
           >
-            Complete the form below to send SMS messages to your contacts. You can send to individual numbers or upload a list of recipients.
+            Fill in the message details and recipient numbers, then send to trigger the scrubbing and verify flow.
           </Typography>
         </Box>
         
@@ -135,8 +135,7 @@ const MainForm = () => {
                 mt: 3 
               }}
             >
-              {/* Compact Send with Template for backup mode, or regular buttons for primary */}
-              <Box sx={{ 
+              <Box sx={{
                 display: 'flex', 
                 justifyContent: 'flex-end', 
                 gap: 2,
