@@ -1,30 +1,39 @@
 import React from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SMSProvider } from './contexts/SMSContext';
 import AppLayout from './components/layout/AppLayout';
 import MainForm from './components/forms/MainForm';
 import { EnvironmentSelector, CorsWarning } from './components/ui/ApiComponents';
 import { ResultsDisplay, DetailsDialog } from './components/ui/Results';
+import LoginPanel from './components/ui/LoginPanel';
+
+const AppContent = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <LoginPanel />;
+  }
+
+  return (
+    <>
+      <EnvironmentSelector />
+      <CorsWarning />
+      <MainForm />
+      <ResultsDisplay />
+      <DetailsDialog />
+    </>
+  );
+};
 
 function App() {
   return (
-    <SMSProvider>
-      <AppLayout>
-        {/* Environment Selector */}
-        <EnvironmentSelector />
-
-        {/* CORS Warning if needed */}
-        <CorsWarning />
-
-        {/* Main Form */}
-        <MainForm />
-
-        {/* Results Display */}
-        <ResultsDisplay />
-
-        {/* Details Dialog */}
-        <DetailsDialog />
-      </AppLayout>
-    </SMSProvider>
+    <AuthProvider>
+      <SMSProvider>
+        <AppLayout>
+          <AppContent />
+        </AppLayout>
+      </SMSProvider>
+    </AuthProvider>
   );
 }
 
