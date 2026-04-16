@@ -2,7 +2,69 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const fs = require('fs');
 const app = express();
+
+// ── Link Manager ──────────────────────────────────────────────────────────────
+const LINK_MANAGER_FILE = '/var/www/linkManager/index.html';
+const LM_START = '<!-- LINK_MANAGER_EXTRA_START -->';
+const LM_END   = '<!-- LINK_MANAGER_EXTRA_END -->';
+
+const EXTRA_CARDS = `
+                    <div class="link-card finance">
+                        <span class="category-badge">Finance</span>
+                        <h3>Personal Capital</h3>
+                        <p>Monitor investments, plan for retirement, and get personalised financial advice.</p>
+                        <a href="https://www.personalcapital.com" class="link-url">https://www.personalcapital.com</a>
+                    </div>
+
+                    <div class="link-card investing">
+                        <span class="category-badge">Investing</span>
+                        <h3>Vanguard</h3>
+                        <p>Low-cost investment funds, retirement accounts, and wealth management services.</p>
+                        <a href="https://www.vanguard.com" class="link-url">https://www.vanguard.com</a>
+                    </div>`;
+
+// GET /link-manager/status — returns { active: bool }
+app.get('/link-manager/status', (req, res) => {
+  try {
+    const content = fs.readFileSync(LINK_MANAGER_FILE, 'utf8');
+    res.json({ active: content.includes(LM_START) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /link-manager/toggle — adds or removes the two extra cards
+app.post('/link-manager/toggle', (req, res) => {
+  try {
+    let content = fs.readFileSync(LINK_MANAGER_FILE, 'utf8');
+    const isActive = content.includes(LM_START);
+
+    if (isActive) {
+      // Remove the marked block (including surrounding whitespace)
+      const start = content.indexOf(LM_START);
+      const end   = content.indexOf(LM_END) + LM_END.length;
+      content = content.slice(0, start).trimEnd() + '\n' + content.slice(end);
+    } else {
+      // Insert after the closing </div> of the Mint card
+      const anchor = 'https://mint.intuit.com</a>';
+      const anchorPos = content.indexOf(anchor);
+      if (anchorPos === -1) {
+        return res.status(500).json({ error: 'Cannot find insertion anchor (mint.intuit.com) in file.' });
+      }
+      const divClosePos = content.indexOf('</div>', anchorPos) + '</div>'.length;
+      const block = '\n\n' + LM_START + EXTRA_CARDS + '\n' + LM_END;
+      content = content.slice(0, divClosePos) + block + content.slice(divClosePos);
+    }
+
+    fs.writeFileSync(LINK_MANAGER_FILE, content, 'utf8');
+    res.json({ active: !isActive });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 3000 : 5001);
 

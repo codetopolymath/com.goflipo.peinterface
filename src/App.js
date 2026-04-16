@@ -6,6 +6,7 @@ import MainForm from './components/forms/MainForm';
 import { EnvironmentSelector, CorsWarning } from './components/ui/ApiComponents';
 import { ResultsDisplay, DetailsDialog } from './components/ui/Results';
 import LoginPanel from './components/ui/LoginPanel';
+import LinkManagerToggle from './components/ui/LinkManagerToggle';
 
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
@@ -16,6 +17,7 @@ const AppContent = () => {
 
   return (
     <>
+      <LinkManagerToggle />
       <EnvironmentSelector />
       <CorsWarning />
       <MainForm />
