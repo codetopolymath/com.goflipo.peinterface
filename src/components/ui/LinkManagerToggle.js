@@ -7,9 +7,8 @@ import LinkIcon from '@mui/icons-material/Link';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
-// Only renders on the blockstatic host
-// DEBUG: set to true temporarily to verify rendering, then restore hostname check
-const IS_BLOCKSTATIC = true; // window.location.hostname.includes('blockstatic');
+// Only renders when REACT_APP_LINK_MANAGER_ENABLED=true (set in .env.production)
+const IS_LINK_MANAGER_ENABLED = process.env.REACT_APP_LINK_MANAGER_ENABLED === 'true';
 
 const LinkManagerToggle = () => {
   const [active, setActive]     = useState(false);
@@ -44,7 +43,7 @@ const LinkManagerToggle = () => {
     }
   };
 
-  if (!IS_BLOCKSTATIC) return null;
+  if (!IS_LINK_MANAGER_ENABLED) return null;
 
   return (
     <>
