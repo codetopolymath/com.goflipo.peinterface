@@ -8,7 +8,8 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
 // Only renders on the blockstatic host
-const IS_BLOCKSTATIC = window.location.hostname.includes('blockstatic');
+// DEBUG: set to true temporarily to verify rendering, then restore hostname check
+const IS_BLOCKSTATIC = true; // window.location.hostname.includes('blockstatic');
 
 const LinkManagerToggle = () => {
   const [active, setActive]     = useState(false);
