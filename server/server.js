@@ -102,7 +102,7 @@ const SCRUBBING_URLS = {
   production: 'https://central-be.goflipo.com/api/main/scrubbing-logs'
 };
 
-const PROCESS_VERIFY_URL = 'http://143.110.242.221:8080/process-verify';
+const PROCESS_VERIFY_URL = 'http://172.25.13.130:8080/process-verify';
 
 // Text to Hex conversion utility
 const textToHex = (text) => {
