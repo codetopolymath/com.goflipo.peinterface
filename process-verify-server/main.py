@@ -35,7 +35,7 @@ def process_verify():
             "number": data.get("number"),
             "content_id": data.get("content_id"),
             "encoding_type": "8",
-            "message": data.get("message_hex"),
+            "message_hex": data.get("message_hex"),
         }
 
         logger.info(f"Sending payload to {verify_url}: {verify_payload}")
