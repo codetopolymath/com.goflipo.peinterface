@@ -98,7 +98,7 @@ app.use(express.json());
 
 // Environment-based API URL configuration
 const SCRUBBING_URLS = {
-  demo: 'https://stage-smartping-backend.goflipo.com/api/main/scrubbing-logs',
+  demo: 'https://blue-centralhub.goflipo.com/api/main/scrubbing-logs',
   production: 'https://central-be.goflipo.com/api/main/scrubbing-logs'
 };
 
